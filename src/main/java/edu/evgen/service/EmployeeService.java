@@ -27,6 +27,9 @@ public class EmployeeService implements CrudService<Employee> {
         Optional.ofNullable(employee.getTransfers())
                 .ifPresent(
                         list -> list.forEach(transferRepository::saveOrUpdate));
+//        Optional.ofNullable(car.getSpareParts())
+//                .ifPresent(
+//                        list -> list.forEach(sparePartRepository::saveOrUpdate));
     }
 
     public void deleteById(Long id) {

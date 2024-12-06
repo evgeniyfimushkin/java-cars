@@ -24,7 +24,12 @@ public class CarService implements CrudService<Car>{
 
     public void saveOrUpdate(Car car) {
         carRepository.saveOrUpdate(car);
-        Optional.ofNullable(car.getSpareParts()).ifPresent(list -> list.forEach(sparePartRepository::saveOrUpdate));
+//        Optional.ofNullable(employee.getTransfers())
+//                .ifPresent(
+//                        list -> list.forEach(transferRepository::saveOrUpdate));
+        Optional.ofNullable(car.getSpareParts())
+                .ifPresent(
+                        list -> list.forEach(sparePartRepository::saveOrUpdate));
     }
 
     public void deleteById(Long id) {

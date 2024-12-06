@@ -14,7 +14,6 @@ import java.sql.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "transfer")
 public class Transfer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

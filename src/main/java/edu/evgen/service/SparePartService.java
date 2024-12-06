@@ -25,15 +25,8 @@ public class SparePartService implements CrudService<SparePart> {
     }
 
     public void saveOrUpdate(SparePart sparePart) {
-
-        Optional.of(sparePart.getCar())
-                .ifPresent(car -> {
-                    sparePart.setCar_model(car.getModel());
-                    if (!carRepository.findAll().contains(sparePart.getCar())) {
-                        sparePart.setCar(null);
-                    }
-                });
         sparePartRepository.saveOrUpdate(sparePart);
+        carRepository.saveOrUpdate(sparePart.getCar());
     }
 
     public void deleteById(Long id) {
