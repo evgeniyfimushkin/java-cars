@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.sql.Date;
 
 @Builder
 @NoArgsConstructor
@@ -37,4 +37,8 @@ public class CustomerBuyer {
 
     @NotNull
     private String paymentType; // Вид оплаты
+    @Override
+    public String toString() {
+        return id.toString();
+    }
 }

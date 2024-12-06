@@ -1,0 +1,21 @@
+services:
+  cars-db:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: cars
+#    volumes:
+#      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    network_mode: host
+#    ports:
+#      - "5432:5432" # Обеспечиваем доступ к PostgreSQL на хосте
+#    networks:
+#      - nocodb_network
+
+
+#networks:
+#  nocodb_network:
+#    driver: bridge

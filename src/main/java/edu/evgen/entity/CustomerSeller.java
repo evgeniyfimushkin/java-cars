@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.sql.Date;
 
 @Data
 @Builder
@@ -44,4 +44,8 @@ public class CustomerSeller {
 
     @NotNull
     private String issuedBy; // Кем выдан документ
+    @Override
+    public String toString() {
+        return id.toString();
+    }
 }

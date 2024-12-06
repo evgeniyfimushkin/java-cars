@@ -7,8 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,6 +22,7 @@ public class SparePart {
     private String name; // Наименование
 
     @ManyToOne
+    @JoinColumn (name = "car_id")
     private Car car; // Марка и модель автомобиля, к которому запчасть
 
     private String car_model;
@@ -32,6 +31,10 @@ public class SparePart {
     private Double price; // Цена
 
     @NotNull
-    private Integer quantityInStock; // Количество на складе
+    private Long quantityInStock; // Количество на складе
+    @Override
+    public String toString() {
+        return id.toString();
+    }
 }
 

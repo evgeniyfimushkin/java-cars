@@ -122,7 +122,10 @@ public class CLI {
                 } else if (field.getType().equals(Long.class)) {
                     Long value = scanner.nextLong();
                     field.set(object, value);
-                } else if (field.getType().equals(Double.class)) {
+                }else if (field.getType().equals(Integer.class)) {
+                    Long value = scanner.nextLong();
+                    field.set(object, value);
+                }  else if (field.getType().equals(Double.class)) {
                     Double value = scanner.nextDouble();
                     field.set(object, value);
                 } else if (field.getType().equals(Date.class)) {
@@ -182,6 +185,7 @@ public class CLI {
 
         if (relatedObject != null) {
             field.set(parentObject, relatedObject);
+            System.out.println("RELATED OBJECT + " + relatedObject);
         } else {
             System.out.println("Failed to set " + field.getName() + " field. Related object not found or created.");
         }
