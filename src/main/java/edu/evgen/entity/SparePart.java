@@ -30,7 +30,7 @@ public class SparePart {
     @NotNull
     private Long quantityInStock; // Количество на складе
 
-    @NotNull
+
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn (name = "car_id")
     private Car car; // Марка и модель автомобиля, к которому запчасть

@@ -170,7 +170,7 @@ public class CLI {
                     String input = scanner.nextLine().trim();
 
                     if (input.isEmpty() && !isNotNull) {
-                        System.out.println("Field will be empty");
+                        printBlue("Field will be empty");
                         break;
                     } else if (input.isEmpty()) {
                         printRed("Field can't be empty");
@@ -208,36 +208,37 @@ public class CLI {
             field.set(object, Date.valueOf(input));
         } else if (field.getType().equals(List.class)) {
         } else {
-            handleRelatedObject(field, object);
+            handleRelatedObject(field, object, input);
         }
     }
 
-    private void handleRelatedObject(Field field, Object parentObject) throws IllegalAccessException {
-        System.out.println(field.getType()
-        );
+    private void handleRelatedObject(Field field, Object parentObject, String input) throws IllegalAccessException {
+        printBlue(field.getType().getSimpleName() + " full table:");
         printAsTable(getService(field.getType()).findAll());
-        System.out.println("Enter ID for " + field.getType().getSimpleName() + ": ");
+//        System.out.println("Enter ID for " + field.getType().getSimpleName() + ": ");
         Long id = null;
         while (id == null) {
-            System.out.println("Enter ID for " + field.getType().getSimpleName() + ": ");
-            String input = scanner.nextLine().trim();
 
             if (!input.isEmpty()) {
                 try {
                     id = Long.parseLong(input);
+                    break;
                 } catch (NumberFormatException e) {
-                    System.out.println("Invalid input. Please enter a valid ID number.");
+                    printRed("Invalid input. Please enter a valid ID number.");
                 }
             } else {
-                System.out.println("Input cannot be empty. Please enter a valid ID number.");
+                printRed("Input cannot be empty. Please enter a valid ID number.");
             }
+            System.out.println("Enter ID for " + field.getType().getSimpleName() + ": ");
+            input = scanner.nextLine().trim();
         }
-        clearScreen();
 
         Object relatedObject = getService(field.getType()).findById(id);
         if (relatedObject == null) {
-            System.out.println(field.getType().getSimpleName() + " not found. Creating a new one...");
+            System.out.println(field.getType().getSimpleName() + " not found.");
+            printBlue("Creating a new " + field.getType().getSimpleName() + "...");
             save(field.getType());
+            printBlue(field.getType().getSimpleName() + " full table:");
             printAsTable(getService(field.getType()).findAll());
             System.out.println("Enter ID for " + field.getType().getSimpleName() + ": ");
             id = scanner.nextLong();
@@ -260,7 +261,7 @@ public class CLI {
     public <T> void printAsTable(List<T> objects) {
 
         if (objects == null || objects.isEmpty()) {
-            System.out.println("No data available");
+            printRed("No data available");
             return;
         }
 
