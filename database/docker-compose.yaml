@@ -11,6 +11,7 @@ services:
 #      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
     network_mode: host
 #    ports:
+
 #      - "5432:5432" # Обеспечиваем доступ к PostgreSQL на хосте
 #    networks:
 #      - nocodb_network

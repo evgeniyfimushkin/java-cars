@@ -1,6 +1,4 @@
-package edu.evgen;
-
-import edu.evgen.entity.Employee;
+package edu.evgen.cli;
 
 public class ColorPrinter {
 

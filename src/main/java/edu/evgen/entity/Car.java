@@ -43,7 +43,7 @@ public class Car {
     private String techConditionCertificateNumber; // Номер справки о техническом состоянии
     private String techConditionExpert; // Эксперт, выдавший справку
 
-    @OneToMany(mappedBy = "car", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "car", cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     private List<SparePart> spareParts;
 
     @Override

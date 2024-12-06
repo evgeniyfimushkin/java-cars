@@ -3,14 +3,17 @@ package edu.evgen.cli;
 import edu.evgen.entity.*;
 import edu.evgen.service.CrudService;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.stream.IntStream;
+
+import static edu.evgen.cli.ColorPrinter.*;
 
 @RequiredArgsConstructor
 public class CLI {
@@ -25,7 +28,8 @@ public class CLI {
 
 
         while (true) {
-
+            System.out.print("Enter to continue...");
+            scanner.nextLine();
             clearScreen();
             System.out.println("=== Главное меню ===");
             System.out.println("1. Edit Cars");
@@ -117,7 +121,7 @@ public class CLI {
             System.out.println("Enter id of " + aClass.getSimpleName());
             Long id = scanner.nextLong();
             Object object;
-            if((object = getService(aClass).findById(id)) == null) {
+            if ((object = getService(aClass).findById(id)) == null) {
                 System.out.println("not found");
                 id = scanner.nextLong();
             }
@@ -128,44 +132,27 @@ public class CLI {
                     continue;
                 }
                 field.setAccessible(true);
-                System.out.print("Enter value for " + field.getName() + ": ");
-                if (field.getType().equals(String.class)) {
-                    String value = scanner.nextLine();
-                    if (value.isEmpty()) continue;
-                    field.set(object, value);
-                } else if (field.getType().equals(Long.class)) {
-                    String value = scanner.nextLine();
-                    if (value.isEmpty()) continue;
-                    field.set(object, Long.parseLong(value));
-                } else if (field.getType().equals(Integer.class)) {
-                    Long value = scanner.nextLong();
-                    field.set(object, value);
-                } else if (field.getType().equals(Double.class)) {
-                    String value = scanner.nextLine();
-                    if (value.isEmpty()) continue;
-                    field.set(object, Double.parseDouble(value));
-                } else if (field.getType().equals(Date.class)) {
-                    System.out.println("Enter date (yyyy-MM-dd): ");
-                    String dateStr = scanner.nextLine();
-                    if (dateStr.isEmpty()) continue;
-                    try {
-                        Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
-                        field.set(object, value);
-                    } catch (IllegalArgumentException e) {
-//                        System.out.println("Invalid date format. Please enter a valid date (yyyy-MM-dd).");
-                        dateStr = scanner.nextLine();
-                        Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
-                        field.set(object, value);
-                    }
-                } else if (field.getType().equals(List.class)) {
+                while (true) {
+                    System.out.print("Enter value for " + field.getName() + ": ");
+                    String input = scanner.nextLine().trim();
 
-                } else {
-                    handleRelatedObject(field, object);
+                    if (input.isEmpty()) {
+                        System.out.println("Value will not change");
+                        break;
+                    }
+                    try {
+                        setFieldValue(field, object, input);
+                        break;
+                    } catch (Exception e) {
+                        System.out.println("Bad value: " + e.getMessage() + ". Try again");
+                    }
+
                 }
             }
             getService(aClass).saveOrUpdate(object);
         } catch (Exception e) {
             e.printStackTrace();
+
         }
     }
 
@@ -177,40 +164,51 @@ public class CLI {
                     continue;
                 }
                 field.setAccessible(true);
-                System.out.print("Enter value for " + field.getName() + ": ");
-                if (field.getType().equals(String.class)) {
-                    String value = scanner.nextLine();
-                    field.set(object, value);
-                } else if (field.getType().equals(Long.class)) {
-                    Long value = scanner.nextLong();
-                    field.set(object, value);
-                } else if (field.getType().equals(Integer.class)) {
-                    Long value = scanner.nextLong();
-                    field.set(object, value);
-                } else if (field.getType().equals(Double.class)) {
-                    Double value = scanner.nextDouble();
-                    field.set(object, value);
-                } else if (field.getType().equals(Date.class)) {
-                    System.out.println("Enter date (yyyy-MM-dd): ");
-                    String dateStr = scanner.nextLine();
-                    try {
-                        Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
-                        field.set(object, value);
-                    } catch (IllegalArgumentException e) {
-//                        System.out.println("Invalid date format. Please enter a valid date (yyyy-MM-dd).");
-                        dateStr = scanner.nextLine();
-                        Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
-                        field.set(object, value);
-                    }
-                } else if (field.getType().equals(List.class)) {
+                boolean isNotNull = field.isAnnotationPresent(NotNull.class);
+                while (true) {
+                    System.out.print("Enter value for " + field.getName() + ": ");
+                    String input = scanner.nextLine().trim();
 
-                } else {
-                    handleRelatedObject(field, object);
+                    if (input.isEmpty() && !isNotNull) {
+                        System.out.println("Field will be empty");
+                        break;
+                    } else if (input.isEmpty()) {
+                        printRed("Field can't be empty");
+                        continue;
+                    }
+
+
+                    try {
+                        setFieldValue(field, object, input);
+                        break;
+                    } catch (Exception e) {
+                        System.out.println("Bad value: " + e.getMessage() + ". Try again");
+                    }
+
                 }
             }
             getService(aClass).saveOrUpdate(object);
+            printBlue("Table note Added");
+            printAsTable(List.of(object));
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void setFieldValue(Field field, Object object, String input) throws IllegalAccessException {
+        if (field.getType().equals(String.class)) {
+            field.set(object, input);
+        } else if (field.getType().equals(Long.class)) {
+            field.set(object, Long.parseLong(input));
+        } else if (field.getType().equals(Integer.class)) {
+            field.set(object, Integer.parseInt(input));
+        } else if (field.getType().equals(Double.class)) {
+            field.set(object, Double.parseDouble(input));
+        } else if (field.getType().equals(Date.class)) {
+            field.set(object, Date.valueOf(input));
+        } else if (field.getType().equals(List.class)) {
+        } else {
+            handleRelatedObject(field, object);
         }
     }
 
@@ -235,7 +233,7 @@ public class CLI {
             }
         }
         clearScreen();
-        // Попытка загрузить объект по ID
+
         Object relatedObject = getService(field.getType()).findById(id);
         if (relatedObject == null) {
             System.out.println(field.getType().getSimpleName() + " not found. Creating a new one...");
@@ -266,38 +264,40 @@ public class CLI {
             return;
         }
 
-        // Получаем класс объекта и его поля
+
         Class<?> clazz = objects.get(0).getClass();
         Field[] fields = clazz.getDeclaredFields();
 
-        // Подготовка заголовков
+
         StringBuilder headerBuilder = new StringBuilder();
         StringBuilder separatorBuilder = new StringBuilder();
 
         for (Field field : fields) {
             field.setAccessible(true);
             String name = truncate(field.getName(), COLUMN_WIDTH);
-            headerBuilder.append(String.format("| %-8s ", name));
-            separatorBuilder.append("+----------");
+            headerBuilder.append(String.format("| %-" + COLUMN_WIDTH + "s ", name));
+            separatorBuilder.append("+--");
+            IntStream.range(0, COLUMN_WIDTH)
+                    .forEach(n -> separatorBuilder.append("-"));
         }
 
-        // Закрытие строки
+
         headerBuilder.append("|");
         separatorBuilder.append("+");
 
-        // Печать заголовков
+
         System.out.println(separatorBuilder);
         System.out.println(headerBuilder);
         System.out.println(separatorBuilder);
 
-        // Печать строк данных
+
         for (T object : objects) {
             StringBuilder rowBuilder = new StringBuilder();
             for (Field field : fields) {
                 try {
                     Object value = field.get(object);
                     String stringValue = value != null ? value.toString() : "NULL";
-                    rowBuilder.append(String.format("| %-8s ", truncate(stringValue, COLUMN_WIDTH)));
+                    rowBuilder.append(String.format("| %-" + COLUMN_WIDTH + "s ", truncate(stringValue, COLUMN_WIDTH)));
                 } catch (IllegalAccessException e) {
                     rowBuilder.append("| ERROR    ");
                 }
@@ -306,7 +306,7 @@ public class CLI {
             System.out.println(rowBuilder);
         }
 
-        // Закрытие таблицы
+
         System.out.println(separatorBuilder);
     }
 
