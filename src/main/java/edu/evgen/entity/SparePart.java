@@ -21,9 +21,6 @@ public class SparePart {
     @NotNull
     private String name; // Наименование
 
-    @ManyToOne
-    @JoinColumn (name = "car_id")
-    private Car car; // Марка и модель автомобиля, к которому запчасть
 
     private String car_model;
 
@@ -32,6 +29,12 @@ public class SparePart {
 
     @NotNull
     private Long quantityInStock; // Количество на складе
+
+    @NotNull
+    @ManyToOne(cascade = CascadeType.PERSIST)
+    @JoinColumn (name = "car_id")
+    private Car car; // Марка и модель автомобиля, к которому запчасть
+
     @Override
     public String toString() {
         return id.toString();

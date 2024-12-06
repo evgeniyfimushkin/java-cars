@@ -5,6 +5,7 @@ import edu.evgen.service.CrudService;
 import jakarta.persistence.Id;
 import lombok.RequiredArgsConstructor;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.Date;
 import java.util.List;
@@ -17,6 +18,8 @@ public class CLI {
     private final List<CrudService> services;
 
     private Scanner scanner = new Scanner(System.in);
+
+    private Integer COLUMN_WIDTH = 8;
 
     public void start() {
 
@@ -31,6 +34,7 @@ public class CLI {
             System.out.println("4. Edit CustomerBuyers");
             System.out.println("5. Edit CustomerSellers");
             System.out.println("6. Edit Transfer");
+            System.out.println("99. Edit Column size");
             System.out.println("0. Выход");
             System.out.print("Выберите действие: ");
             String choice = scanner.nextLine();
@@ -42,6 +46,10 @@ public class CLI {
                 case "4" -> handle(CustomerBuyer.class);
                 case "5" -> handle(CustomerSeller.class);
                 case "6" -> handle(Transfer.class);
+                case "99" -> {
+                    System.out.println("Enter column size: ");
+                    COLUMN_WIDTH = Integer.parseInt(scanner.nextLine());
+                }
                 case "0" -> {
                     return;
                 }
@@ -104,11 +112,65 @@ public class CLI {
     }
 
     private void update(Class aClass) {
+        try {
+            printAsTable(getService(aClass).findAll());
+            System.out.println("Enter id of " + aClass.getSimpleName());
+            Long id = scanner.nextLong();
+            Object object;
+            if((object = getService(aClass).findById(id)) == null) {
+                System.out.println("not found");
+                id = scanner.nextLong();
+            }
 
+
+            for (Field field : aClass.getDeclaredFields()) {
+                if (field.getAnnotation(Id.class) != null) {
+                    continue;
+                }
+                field.setAccessible(true);
+                System.out.print("Enter value for " + field.getName() + ": ");
+                if (field.getType().equals(String.class)) {
+                    String value = scanner.nextLine();
+                    if (value.isEmpty()) continue;
+                    field.set(object, value);
+                } else if (field.getType().equals(Long.class)) {
+                    String value = scanner.nextLine();
+                    if (value.isEmpty()) continue;
+                    field.set(object, Long.parseLong(value));
+                } else if (field.getType().equals(Integer.class)) {
+                    Long value = scanner.nextLong();
+                    field.set(object, value);
+                } else if (field.getType().equals(Double.class)) {
+                    String value = scanner.nextLine();
+                    if (value.isEmpty()) continue;
+                    field.set(object, Double.parseDouble(value));
+                } else if (field.getType().equals(Date.class)) {
+                    System.out.println("Enter date (yyyy-MM-dd): ");
+                    String dateStr = scanner.nextLine();
+                    if (dateStr.isEmpty()) continue;
+                    try {
+                        Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
+                        field.set(object, value);
+                    } catch (IllegalArgumentException e) {
+//                        System.out.println("Invalid date format. Please enter a valid date (yyyy-MM-dd).");
+                        dateStr = scanner.nextLine();
+                        Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
+                        field.set(object, value);
+                    }
+                } else if (field.getType().equals(List.class)) {
+
+                } else {
+                    handleRelatedObject(field, object);
+                }
+            }
+            getService(aClass).saveOrUpdate(object);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void save(Class aClass) {
-        try{
+        try {
             Object object = aClass.getDeclaredConstructor().newInstance();
             for (Field field : aClass.getDeclaredFields()) {
                 if (field.getAnnotation(Id.class) != null) {
@@ -122,45 +184,32 @@ public class CLI {
                 } else if (field.getType().equals(Long.class)) {
                     Long value = scanner.nextLong();
                     field.set(object, value);
-                }else if (field.getType().equals(Integer.class)) {
+                } else if (field.getType().equals(Integer.class)) {
                     Long value = scanner.nextLong();
                     field.set(object, value);
-                }  else if (field.getType().equals(Double.class)) {
+                } else if (field.getType().equals(Double.class)) {
                     Double value = scanner.nextDouble();
                     field.set(object, value);
                 } else if (field.getType().equals(Date.class)) {
                     System.out.println("Enter date (yyyy-MM-dd): ");
                     String dateStr = scanner.nextLine();
-                    Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
-                    field.set(object, value);
-                }else if (field.getType().equals(List.class)){
+                    try {
+                        Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
+                        field.set(object, value);
+                    } catch (IllegalArgumentException e) {
+//                        System.out.println("Invalid date format. Please enter a valid date (yyyy-MM-dd).");
+                        dateStr = scanner.nextLine();
+                        Date value = Date.valueOf(dateStr); // Преобразуем строку в дату
+                        field.set(object, value);
+                    }
+                } else if (field.getType().equals(List.class)) {
 
-                }
-                else{
+                } else {
                     handleRelatedObject(field, object);
                 }
-//                }else if (field.getType().equals(Employee.class)) {
-//                    System.out.println("Enter employee id: ");
-//                    Long id = scanner.nextLong();
-//                    Optional.ofNullable ((Employee) getService(Employee.class).findById(id))
-//                            .ifPresentOrElse(employee -> {
-//                                try {
-//                                    field.set(object,employee);
-//                                } catch (IllegalAccessException e) {
-//                                    throw new RuntimeException(e);
-//                                }
-//                            },() -> {
-//                                save(Employee.class);
-//                                try {
-//                                    field.set(object,(Employee) getService(Employee.class).findById(id));
-//                                } catch (IllegalAccessException e) {
-//                                    throw new RuntimeException(e);
-//                                }
-//                            });
-//                }
             }
             getService(aClass).saveOrUpdate(object);
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -170,7 +219,21 @@ public class CLI {
         );
         printAsTable(getService(field.getType()).findAll());
         System.out.println("Enter ID for " + field.getType().getSimpleName() + ": ");
-        Long id = Long.parseLong(scanner.nextLine().trim());
+        Long id = null;
+        while (id == null) {
+            System.out.println("Enter ID for " + field.getType().getSimpleName() + ": ");
+            String input = scanner.nextLine().trim();
+
+            if (!input.isEmpty()) {
+                try {
+                    id = Long.parseLong(input);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid input. Please enter a valid ID number.");
+                }
+            } else {
+                System.out.println("Input cannot be empty. Please enter a valid ID number.");
+            }
+        }
         clearScreen();
         // Попытка загрузить объект по ID
         Object relatedObject = getService(field.getType()).findById(id);
@@ -195,8 +258,8 @@ public class CLI {
         System.out.print("\033[H\033[2J");
         System.out.flush();
     }
+
     public <T> void printAsTable(List<T> objects) {
-        var COLUMN_WIDTH = 8;
 
         if (objects == null || objects.isEmpty()) {
             System.out.println("No data available");
@@ -246,6 +309,7 @@ public class CLI {
         // Закрытие таблицы
         System.out.println(separatorBuilder);
     }
+
     private String truncate(String text, int maxLength) {
         if (text.length() > maxLength) {
             return text.substring(0, maxLength - 3) + "...";
